@@ -1,0 +1,8 @@
+target/
+*.class
+.DS_Store
+
+# Local demos and outputs; keep official source material out of Git.
+/demo/
+/docs/*.pdf
+/docs/ejemplo/
