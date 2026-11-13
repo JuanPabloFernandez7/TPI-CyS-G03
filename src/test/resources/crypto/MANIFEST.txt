@@ -1,0 +1,55 @@
+Fixtures de interoperabilidad generados con: OpenSSL 3.6.2 7 Apr 2026 (Library: OpenSSL 3.6.2 7 Apr 2026)
+Comando: openssl enc -<cifrador> -pbkdf2 -iter 10000 -md sha256 -S 0000000000000000 -pass pass:<contrasena> -in plaintext-423.bin -out <salida>
+Cifradores: aes-128/192/256-{ecb,cbc,cfb8,ofb} y des-ede3 (ECB) / des-ede3-{cbc,cfb8,ofb}
+Contrasenas: oculto/ = 'oculto'; nonascii/ = 'contraseña€ñ' (UTF-8); empty/ = '' (vacia)
+Plaintext: 423 bytes, byte[i] = (i*37 + 11) mod 256. Sin encabezado Salted__ (OpenSSL 3.6.2 no lo escribe con -S).
+SHA-256 de cada archivo:
+5c8b68fa39f9e6abfe225c5c08e1817591416819748a2130db9fe8a0edd72f03  plaintext-423.bin
+1b2385ffbe0b96d80b362c7cf4e12c9785f5a8f87a3ce46af9ab28790b624bc2  oculto/3des-cbc.bin
+26db4e28b8c9592e93646cd67a78d2c9cbacf9a90d33124146f0fe6e07c059cb  oculto/3des-cfb8.bin
+8dc9ea2ce4efbd2fd9e9f10972619797678f025967650084e0ed096f6c0c7f5a  oculto/3des-ecb.bin
+39d1b9d55ca3f3e7ff0cffd8009f566fca01394f90d0c94fcf293d60358a87b4  oculto/3des-ofb.bin
+0533c09b6876ce470b7c4588aa0b12aab34c4d3570dec24313c10ff4f4e47100  oculto/aes128-cbc.bin
+bd6217bcef4163f211411606e2f1f13494871ff27c9f2f4ceda305f0817c2811  oculto/aes128-cfb8.bin
+adfc32a74be17324afce163da4fd92f36d365be2fe1a40943cca4364c4edda68  oculto/aes128-ecb.bin
+1b85dde2ff0b24fa5f80c261ac6af88c62b647114b3b9fb5a6b59cb779feb66c  oculto/aes128-ofb.bin
+3cd16cad444332475f6846ee745d703171660a53477554654ed012787ca1e2d6  oculto/aes192-cbc.bin
+02455dc157876bee60cb81d2ab96098f16ea5aaf1a18c78a0acac29f6551c47c  oculto/aes192-cfb8.bin
+56555859a645b6be1cca54965f26b301484c91c7ace36288c3a7718ef6481f3d  oculto/aes192-ecb.bin
+d9453e79d55d3d26773dda9d7799c74df0bb0367fb2f574beedd85af5cff7aa1  oculto/aes192-ofb.bin
+b167a067c21aaffe57bfdda631b50f14dcbf3ee48695ea5a3b8a90e84bd7da82  oculto/aes256-cbc.bin
+a72993d3c8e8cc91e2aebbafab8d0a1fab1b79b242350def4769cea7813b0f55  oculto/aes256-cfb8.bin
+b34724593928e969e0ea8f0ef714a82f1b06b35634461bab05e7ca6fb967a72e  oculto/aes256-ecb.bin
+702be256933c09bcbcd082ac0b29fa94930c01ba4259e7d40f4caddd72cb1e68  oculto/aes256-ofb.bin
+1662a88aca1f6730d5077a23f0ce3773078a73bfb3af6933c7c4a2ad8733134f  nonascii/3des-cbc.bin
+55946f8733edf0f46402eb44dde0d657318aa6cb2766cf50af4fea4d788e60be  nonascii/3des-cfb8.bin
+f3cc4d2a052fba86317007d44679478de6d19781f821ce0570de1f15c279a887  nonascii/3des-ecb.bin
+b02147430772b8975fbbf0703511ffa97f6aa9592f4cf0ae2bb416c42ad59f08  nonascii/3des-ofb.bin
+1be486ccaf9654d834d710cb720bd8ea8873608335cc836aa8436de69f69b182  nonascii/aes128-cbc.bin
+51cf8575e5ce473ebe0463ef2b260033fbc7e179a9a745c1a5d187741682ab99  nonascii/aes128-cfb8.bin
+557524a1793a311a708bc69fa2116fc30fdd5140cd503b7444d73938df4116a6  nonascii/aes128-ecb.bin
+d22465e9d555b5361d02d654ae88ed7055606de31286ace701535943043a9e38  nonascii/aes128-ofb.bin
+5c95f92727422b8fb9c1acedd2f5bb79a93402567439460f703060effe1a3133  nonascii/aes192-cbc.bin
+a2e07081e36de2fb1a0e8545bdb6aae972e22c5e4978c7a0c761f83e71eca253  nonascii/aes192-cfb8.bin
+970d983c8f785474aff526a8b9224a40b7f7493c950e2a51f7218fe0c5b45da5  nonascii/aes192-ecb.bin
+775175c3024f134eb73a1eadab07f192e10a0b84376fb8776ebcbeef1e56d360  nonascii/aes192-ofb.bin
+b4418e5b5fc9dd2772158d097ad7a42d0d6696869f26dbe9e894dc89118da374  nonascii/aes256-cbc.bin
+0df869a3f4df2f35b62c277b8e89ef9f7e37f196c8f02837e26a712a5cc0a79a  nonascii/aes256-cfb8.bin
+eafc728dbb5970f763f2f95e3cae4abc08cbee7f1cab208b9acc84422c90bad4  nonascii/aes256-ecb.bin
+834781de401cbfe99d36a66a742574549a0f8ed24ed5c3f9fd8da3bd75f6fcc6  nonascii/aes256-ofb.bin
+c8e77308680e259c8f52072bb0515c0a4ada994baf3cb7bed9577b7e9a150ec1  empty/3des-cbc.bin
+12933ea9fc03f81e5139b581d48dbc832233cb8e57c455d766edce222fad019a  empty/3des-cfb8.bin
+1a748a66d60d7886758e5ddbf20e00336e02e3fda2d7577712106800a4785872  empty/3des-ecb.bin
+38d506b21497cdfd04d735e44f9c3c8f887687dc5d5dfbd06f8254a1a899ec82  empty/3des-ofb.bin
+15e80ce17fc8536b562355be2a97e84c5f661bd7fa0f4766d363a178dec230c9  empty/aes128-cbc.bin
+4d839fe07ea76ba7c85af1a75d064bed9467ec438fd96b768f0ca21d34a3b146  empty/aes128-cfb8.bin
+57de478e700d08033fe1fc1702c14747233c61aec2a7e70f815e0e271edbe505  empty/aes128-ecb.bin
+1e2ae06f5077b313ce9b07349bbfbdc29467bf9d1fc3ccb2246df2279e8ba915  empty/aes128-ofb.bin
+6a8ba59a74266b5862c65aafe6dadf59d7b02b78c3f9a8012dbbec343e4f0877  empty/aes192-cbc.bin
+90a9dfb9372c87c8b2777d2831d6b596a88a1939de50fa9ae90c637abebed888  empty/aes192-cfb8.bin
+23395e617a71e36b0fda41040f78e3d444724d07345fa0ca6e64a8fa520ab267  empty/aes192-ecb.bin
+1f5bd655bcd8616f0caa98ec48c7fb13bc84d92b7361017903e11fb6e4fb978b  empty/aes192-ofb.bin
+98f67461eadd852f78e77ddc742a8bc47f027cbb40fddff497deda0d14a41625  empty/aes256-cbc.bin
+44c261ad7eca8130c2dc4e449a0856de621db51dce4f691442f40afade3b67d4  empty/aes256-cfb8.bin
+b6df31aabc1c345eb9da646d3c8d6490074c8be8cfca6f8041555746cfe49acc  empty/aes256-ecb.bin
+d5cde41ac97ffb11271a32fe1e63d1ea17b1b72d255f01026ae3e57d4688acd1  empty/aes256-ofb.bin
