@@ -257,8 +257,13 @@ final class OpenSslHarness {
             ProcessBuilder builder = new ProcessBuilder(command);
             builder.redirectErrorStream(true);
             builder.redirectOutput(outFile.toFile());
-            builder.redirectInput(stdin != null ? stdin : new File("/dev/null"));
+            if (stdin != null) {
+                builder.redirectInput(stdin);
+            }
             Process process = builder.start();
+            if (stdin == null) {
+                process.getOutputStream().close(); // EOF, portable en Windows y Unix.
+            }
             try {
                 if (!process.waitFor(60, TimeUnit.SECONDS)) {
                     process.destroyForcibly();

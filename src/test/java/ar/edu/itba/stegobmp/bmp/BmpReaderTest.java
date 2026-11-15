@@ -130,9 +130,31 @@ class BmpReaderTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"12", "108", "124", "0", "41"})
-    void dibSizeOtherThan40(long dib) {
+    @CsvSource({"12", "0", "41", "125"})
+    void unsupportedDibSize(long dib) {
         assertTrue(error(BmpTestData.valid(2, 2).dibSize(dib).build()).contains("DIB"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"108", "124"})
+    void extendedHeadersPreserveMetadataAndUseTheActualPixelOffset(int dib) throws Exception {
+        byte[] data = BmpTestData.valid(3, 2).gap(dib - 40).dibSize(dib).trailing(7).build();
+        BmpImage image = parse(data);
+        assertEquals(14 + dib, image.bodyOffset());
+        assertEquals(24, image.bodyLength());
+        assertArrayEquals(Arrays.copyOfRange(data, 14 + dib, 14 + dib + 24), image.copyBody());
+        assertArrayEquals(data, image.withBody(image.copyBody()).toBytes());
+        byte[] body = image.copyBody();
+        body[0] ^= 1;
+        byte[] changed = image.withBody(body).toBytes();
+        assertArrayEquals(Arrays.copyOf(data, 14 + dib), Arrays.copyOf(changed, 14 + dib));
+        assertArrayEquals(image.trailingBytes(), image.withBody(body).trailingBytes());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"108", "124"})
+    void pixelsCannotOverlapAnExtendedHeader(int dib) {
+        assertTrue(error(BmpTestData.valid(3, 2).dibSize(dib).build()).contains("Offset"));
     }
 
     @ParameterizedTest

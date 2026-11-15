@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Lee y valida BMP V3 (BITMAPINFOHEADER) de 24 bits sin compresión. */
+/** Lee BMP V3/V4/V5 de 24 bits sin compresión, preservando el encabezado completo. */
 public final class BmpReader {
     private BmpReader() {
     }
@@ -33,9 +33,8 @@ public final class BmpReader {
         int bitsPerPixel = u16(data, 28);
         long compression = u32(data, 30);
 
-        if (dibSize != BmpHeader.DIB_HEADER_SIZE) {
-            throw new BmpFormatException("Solo se soporta BMP V3 con DIB de " + BmpHeader.DIB_HEADER_SIZE
-                    + " bytes; el archivo tiene " + dibSize);
+        if (dibSize != BmpHeader.DIB_HEADER_SIZE && dibSize != 108 && dibSize != 124) {
+            throw new BmpFormatException("Se requiere DIB de 40, 108 o 124 bytes; el archivo tiene " + dibSize);
         }
         if (planes != 1) {
             throw new BmpFormatException("Planos inválidos: " + planes + " (se esperaba 1)");
@@ -54,9 +53,10 @@ public final class BmpReader {
         if (height == 0) {
             throw new BmpFormatException("Alto inválido: 0");
         }
-        if (pixelOffset < BmpHeader.SIZE) {
+        long headerEnd = 14 + dibSize;
+        if (pixelOffset < headerEnd) {
             throw new BmpFormatException("Offset de píxeles inválido: " + pixelOffset
-                    + " (mínimo " + BmpHeader.SIZE + ")");
+                    + " (mínimo " + headerEnd + ")");
         }
 
         BmpHeader header = new BmpHeader(pixelOffset, width, height);

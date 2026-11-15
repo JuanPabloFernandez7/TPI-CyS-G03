@@ -61,7 +61,7 @@ class OpenSslFixtureTest {
     void manifestHashesMatchTheFixtureFiles() throws Exception {
         String manifest = new String(resource("MANIFEST.txt"), StandardCharsets.UTF_8);
         Map<String, String> hashes = new HashMap<>();
-        for (String line : manifest.split("\n")) {
+        for (String line : manifest.split("\\R")) {
             if (line.matches("[0-9a-f]{64}  \\S+")) {
                 hashes.put(line.substring(66), line.substring(0, 64));
             }

@@ -21,7 +21,8 @@ class PackagedJarIT {
         Path jar = Path.of(System.getProperty("stegobmp.jar"));
         assertTrue(Files.isRegularFile(jar), "No existe el JAR: " + jar);
         Path javaBin = Path.of(System.getProperty("java.home"), "bin", "java");
-        List<String> command = new ArrayList<>(List.of(javaBin.toString(), "-jar", jar.toString()));
+        List<String> command = new ArrayList<>(List.of(javaBin.toString(),
+                "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-jar", jar.toString()));
         command.addAll(List.of(args));
         Path outFile = Files.createTempFile("stegobmp-out", ".txt");
         Path errFile = Files.createTempFile("stegobmp-err", ".txt");

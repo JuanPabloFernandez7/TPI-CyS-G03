@@ -6,3 +6,7 @@ target/
 /demo/
 /docs/*.pdf
 /docs/ejemplo/
+
+# Reproducible analysis outputs and Python bytecode.
+/output/
+/tools/__pycache__/
