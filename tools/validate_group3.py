@@ -53,22 +53,25 @@ def main():
         run('-embed', '-in', hidden, '-p', carrier, '-out', target, '-steg', method)
         recovered = dest / ('comparison-' + method)
         run('-extract', '-p', target, '-out', recovered, '-steg', method)
-        assert recovered.with_suffix('.png').read_bytes() == hidden.read_bytes()
+        if recovered.with_suffix('.png').read_bytes() != hidden.read_bytes():
+            raise ValueError(f'Round-trip content differs: {method}')
         stego = target.read_bytes()
-        assert original[:offset] == stego[:offset] and original[offset + body_size:] == stego[offset + body_size:]
+        if original[:offset] != stego[:offset] or original[offset + body_size:] != stego[offset + body_size:]:
+            raise ValueError(f'Non-pixel BMP bytes were changed: {method}')
         new = np.frombuffer(stego[offset:offset + body_size], dtype=np.uint8)
         new_pixels = new.reshape(abs(height), stride)[:, :width * 3].astype(np.int16)
         delta = new_pixels - old_pixels
         mse = float(np.mean(delta.astype(np.float64) ** 2))
         changes = int(np.count_nonzero(delta))
-        capacity = body_size // (2 if method == 'LSB4' else 8) if method != 'LSBI' else (width * abs(height) * 2 - 3) // 8
+        positions = np.arange(body_size)
+        columns = positions % stride
+        selected = positions[(positions >= 4) & ((columns >= width * 3) | (columns % 3 != 2))]
+        capacity = body_size // (2 if method == 'LSB4' else 8) if method != 'LSBI' else len(selected) // 8
         row = dict(method=method, capacity_bytes=capacity, stream_bytes=hidden.stat().st_size + 9,
                    changed_components=changes, mse=mse, psnr_db=10 * math.log10(255 ** 2 / mse),
                    max_absolute_change=int(np.max(np.abs(delta))), output_sha256=hashlib.sha256(stego).hexdigest(),
                    round_trip_equal=True)
         if method == 'LSBI':
-            positions = np.arange(body_size)
-            selected = positions[(positions >= 4) & ((positions % stride) < width * 3) & ((positions % stride) % 3 != 2)]
             payload = len(hidden.read_bytes()).to_bytes(4, 'big') + hidden.read_bytes() + b'.png\0'
             bits = np.unpackbits(np.frombuffer(payload, dtype=np.uint8))
             used = selected[:len(bits)]

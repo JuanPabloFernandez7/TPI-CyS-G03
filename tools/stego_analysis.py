@@ -21,8 +21,10 @@ def streams(body, width, height):
     n = len(a) // 2 * 2
     yield 'LSB4', ((a[:n:2] & 15) << 4 | (a[1:n:2] & 15)).tobytes()
     stride = (width * 3 + 3) // 4 * 4
-    selected = a.reshape(abs(height), stride)[:, :width * 3].reshape(-1, 3)[:, :2].reshape(-1)
-    skipped = sum(i % stride < width * 3 and (i % stride) % 3 != 2 for i in range(min(4, len(a))))
+    columns = np.arange(stride)
+    eligible = (columns >= width * 3) | (columns % 3 != 2)
+    selected = a.reshape(abs(height), stride)[:, eligible].reshape(-1)
+    skipped = int(np.count_nonzero(eligible[:min(4, len(a))]))
     selected = selected[skipped:]
     flags = a[:4] & 1
     yield 'LSBI', packed((selected & 1) ^ flags[(selected >> 1) & 3])
@@ -42,6 +44,27 @@ def parse_payload(stream):
     if any(x < 32 or x > 126 or x in (47, 92) for x in extension):
         return None
     return stream[4:end], extension.decode('ascii'), nul + 1
+
+
+def png_end_offset(raw):
+    if not raw.startswith(b'\x89PNG\r\n\x1a\n'):
+        raise ValueError('Invalid PNG signature')
+    offset = 8
+    while True:
+        if len(raw) - offset < 12:
+            raise ValueError('Truncated PNG chunk or missing IEND')
+        size = int.from_bytes(raw[offset:offset + 4], 'big')
+        kind = raw[offset + 4:offset + 8]
+        end = offset + 12 + size
+        if end > len(raw):
+            raise ValueError('Truncated PNG chunk')
+        if zlib.crc32(raw[offset + 4:end - 4]) != int.from_bytes(raw[end - 4:end], 'big'):
+            raise ValueError('Invalid PNG CRC')
+        offset = end
+        if kind == b'IEND':
+            if size != 0:
+                raise ValueError('Invalid PNG IEND')
+            return offset
 
 
 def analyze(path, output):
@@ -95,16 +118,7 @@ def solve_group3(inputs, output):
     png = output / 'hugo4-LSB4.png'
     # Validate every PNG chunk and locate the actual image end, independently of ZIP parsing.
     raw = png.read_bytes()
-    offset = 8
-    while True:
-        size = int.from_bytes(raw[offset:offset + 4], 'big')
-        kind = raw[offset + 4:offset + 8]
-        end = offset + 12 + size
-        if zlib.crc32(raw[offset + 4:end - 4]) != int.from_bytes(raw[end - 4:end], 'big'):
-            raise ValueError('Invalid PNG CRC')
-        offset = end
-        if kind == b'IEND':
-            break
+    offset = png_end_offset(raw)
     with zipfile.ZipFile(png) as archive:
         if archive.testzip() is not None or archive.namelist() != ['sol3.txt']:
             raise ValueError('Unexpected or corrupt nested ZIP')

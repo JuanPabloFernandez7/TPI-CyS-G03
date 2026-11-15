@@ -72,7 +72,7 @@ class EndToEndLsbiTest {
         byte[] content = {0x5A};
         Path input = file("archivo.txt", content);
         Path originalPath = dir.resolve("original.bmp");
-        Files.write(originalPath, BmpTestData.valid(1, -41).gap(9).trailing(11).build());
+        Files.write(originalPath, BmpTestData.valid(1, -28).gap(9).trailing(11).build());
         byte[] originalBytes = Files.readAllBytes(originalPath);
         BmpImage original = BmpReader.read(originalPath);
         Path output = dir.resolve("resultado.bmp");
@@ -91,7 +91,7 @@ class EndToEndLsbiTest {
         byte[] after = encoded.copyBody();
         CarrierLayout layout = layout(original);
         for (int index = 4; index < before.length; index++) {
-            if (!layout.isBlueOrGreenComponent(index)) {
+            if (!layout.isLsbiDataByte(index)) {
                 assertEquals(before[index], after[index], "Non-data byte changed at " + index);
             }
         }
@@ -115,13 +115,53 @@ class EndToEndLsbiTest {
     void oneByteBeyondCapacityFailsBeforeWritingOutput() throws Exception {
         Path input = file("archivo.txt", new byte[] {1});
         Path bmp = dir.resolve("capacidad.bmp");
-        Files.write(bmp, BmpTestData.valid(1, 40).build());
+        Files.write(bmp, BmpTestData.valid(1, 27).build());
         Path output = dir.resolve("no-debe-existir.bmp");
 
         assertEquals(1, embed(input, bmp, output));
         assertTrue(lastErr.contains("se necesitan 10 bytes"));
         assertTrue(lastErr.contains("capacidad máxima es 9 bytes"));
         assertFalse(Files.exists(output));
+    }
+
+    static Stream<Arguments> paddedRowsAndEncryption() {
+        return Stream.of(
+                Arguments.of(1, false), Arguments.of(1, true),
+                Arguments.of(2, false), Arguments.of(2, true),
+                Arguments.of(3, false), Arguments.of(3, true));
+    }
+
+    @ParameterizedTest(name = "width {0}, encrypted {1}")
+    @MethodSource("paddedRowsAndEncryption")
+    void paddedRowsRoundTripAndPreserveBmpStructuresAndRedPixels(int width, boolean encrypted) throws Exception {
+        byte[] originalBytes = BmpTestData.valid(width, -160).gap(9).trailing(11).build();
+        Path bmp = file("padded.bmp", originalBytes);
+        byte[] content = new byte[16];
+        new Random(42).nextBytes(content);
+        Path input = file("input.dat", content);
+        Path encodedPath = dir.resolve("encoded.bmp");
+        String[] options = encrypted ? new String[] {"-a", "aes128", "-m", "cbc", "-pass", "pw"} : new String[0];
+
+        assertEquals(0, embed(input, bmp, encodedPath, options), lastErr);
+        assertEquals(0, extract(encodedPath, dir.resolve("decoded"), options), lastErr);
+        assertArrayEquals(content, Files.readAllBytes(dir.resolve("decoded.dat")));
+
+        BmpImage before = BmpReader.read(bmp);
+        BmpImage after = BmpReader.read(encodedPath);
+        assertArrayEquals(Arrays.copyOfRange(originalBytes, 0, before.bodyOffset()),
+                Arrays.copyOfRange(after.toBytes(), 0, after.bodyOffset()));
+        assertArrayEquals(before.trailingBytes(), after.trailingBytes());
+        byte[] originalBody = before.copyBody();
+        byte[] encodedBody = after.copyBody();
+        int stride = (int) before.header().stride();
+        for (int index = 0; index < originalBody.length; index++) {
+            int difference = (originalBody[index] ^ encodedBody[index]) & 0xFF;
+            assertEquals(0, difference & 0xFE, "Non-LSB bit changed at " + index);
+            int column = index % stride;
+            if (index >= 4 && column < width * 3 && column % 3 == 2) {
+                assertEquals(0, difference, "Red component changed at " + index);
+            }
+        }
     }
 
     @ParameterizedTest(name = "{0}-{1}")

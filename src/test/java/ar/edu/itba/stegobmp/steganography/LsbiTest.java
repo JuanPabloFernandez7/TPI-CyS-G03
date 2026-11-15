@@ -7,7 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class LsbiTest {
     private static final CarrierLayout LAYOUT = new CarrierLayout(2, 5, 8);
@@ -75,7 +79,7 @@ class LsbiTest {
     }
 
     @Test
-    void embedsOnlyInBlueAndGreenAndPreservesRedAndPadding() throws Exception {
+    void embedsInBlueGreenAndPaddingAndPreservesRed() throws Exception {
         CarrierLayout layout = new CarrierLayout(1, 10, 4);
         byte[] body = new byte[(int) layout.bodyLength()];
         Arrays.fill(body, (byte) 0xA6);
@@ -83,7 +87,7 @@ class LsbiTest {
         int[] usedPositions = firstDataPositions(body, layout, Byte.SIZE);
 
         for (int index = 4; index < body.length; index++) {
-            if (!layout.isBlueOrGreenComponent(index)
+            if (!layout.isLsbiDataByte(index)
                     || Arrays.binarySearch(usedPositions, index) < 0) {
                 assertEquals(body[index], result[index], "Unexpected change at body index " + index);
             } else {
@@ -95,22 +99,49 @@ class LsbiTest {
     }
 
     @Test
-    void paddingCanChangeOnlyWhenItIsOneOfTheFourFlagBytes() throws Exception {
-        CarrierLayout layout = new CarrierLayout(1, 1, 4);
-        byte[] body = {(byte) 0xA7, (byte) 0xA7, (byte) 0xA7, (byte) 0xA7};
+    void paddingInTheReservedPrefixStoresTheFourthFlag() throws Exception {
+        CarrierLayout layout = new CarrierLayout(1, 4, 4);
+        byte[] body = new byte[16];
+        Arrays.fill(body, (byte) 0x06);
 
-        byte[] result = lsbi.embed(body, new byte[0], layout);
+        byte[] result = lsbi.embed(body, new byte[] {(byte) 0xFF}, layout);
 
-        for (int index = 0; index < body.length; index++) {
-            assertEquals(0, (body[index] ^ result[index]) & 0xFE);
-            assertEquals(0, result[index] & 1, "The inversion flags are all zero");
+        assertArrayEquals(new byte[] {0x06, 0x06, 0x06, 0x07}, Arrays.copyOf(result, 4));
+        assertEquals(0xFF, lsbi.newReader(result, layout).readByte());
+        assertEquals(0x06, body[3], "The input prefix remains unchanged");
+    }
+
+    static Stream<Arguments> paddedVectors() {
+        return Stream.of(
+                Arguments.of(1, 4L, new int[] {4, 5, 7, 8, 9, 11, 12, 13}, 1),
+                Arguments.of(2, 8L, new int[] {4, 6, 7, 8, 9, 11, 12, 14}, 2),
+                Arguments.of(3, 12L, new int[] {4, 6, 7, 9, 10, 11, 12, 13}, 4));
+    }
+
+    @ParameterizedTest(name = "width {0}, stride {1}")
+    @MethodSource("paddedVectors")
+    void manualVectorsIncludePaddingAcrossRowsAndEnforceCapacity(
+            int width, long stride, int[] positions, int expectedCapacity) throws Exception {
+        CarrierLayout layout = new CarrierLayout(width, 4, stride);
+        byte[] body = new byte[(int) layout.bodyLength()];
+        byte[] expected = body.clone();
+        // A5 is 10100101, giving four changes and four unchanged bits for pattern 00.
+        for (int bit : new int[] {0, 2, 5, 7}) {
+            expected[positions[bit]] = 1;
         }
-        assertEquals(0, result[3] & 1, "The fourth physical byte is row padding but stores a flag");
+
+        assertArrayEquals(expected, lsbi.embed(body, new byte[] {(byte) 0xA5}, layout));
+        assertEquals(0xA5, lsbi.newReader(expected, layout).readByte());
+        assertEquals(expectedCapacity, lsbi.capacityBytes(body.length, layout));
+        assertEquals(expectedCapacity,
+                lsbi.newReader(lsbi.embed(body, new byte[expectedCapacity], layout), layout).remainingBytes());
+        assertThrows(CapacityExceededException.class,
+                () -> lsbi.embed(body, new byte[expectedCapacity + 1], layout));
     }
 
     @Test
     void exactCapacityFitsAndOneAdditionalByteIsRejected() throws Exception {
-        CarrierLayout exact = new CarrierLayout(1, 41, 4);
+        CarrierLayout exact = new CarrierLayout(1, 28, 4);
         byte[] body = new byte[(int) exact.bodyLength()];
         assertEquals(10, lsbi.capacityBytes(body.length, exact));
         assertEquals(10, lsbi.newReader(body, exact).remainingBytes());
@@ -137,8 +168,8 @@ class LsbiTest {
         byte[] body = new byte[(int) LAYOUT.bodyLength()];
         StegoReader reader = lsbi.newReader(body, LAYOUT);
 
-        assertThrows(StegoDataException.class, () -> reader.readBytes(3));
-        assertEquals(2, reader.remainingBytes());
+        assertThrows(StegoDataException.class, () -> reader.readBytes(4));
+        assertEquals(3, reader.remainingBytes());
         assertEquals(0, reader.readByte());
     }
 
@@ -161,7 +192,7 @@ class LsbiTest {
         int[] positions = new int[count];
         int next = 4;
         for (int index = 0; index < count; index++) {
-            while (next < body.length && !layout.isBlueOrGreenComponent(next)) {
+            while (next < body.length && !layout.isLsbiDataByte(next)) {
                 next++;
             }
             positions[index] = next++;

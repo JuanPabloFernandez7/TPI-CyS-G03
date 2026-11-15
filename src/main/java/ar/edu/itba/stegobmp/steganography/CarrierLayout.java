@@ -28,23 +28,23 @@ public record CarrierLayout(int width, long rows, long rowStride) {
         return (long) width * 3;
     }
 
-    /** True for a B or G component byte, false for R and row padding. */
-    public boolean isBlueOrGreenComponent(long bodyIndex) {
+    /** True for a B/G component or row padding, false for R. */
+    public boolean isLsbiDataByte(long bodyIndex) {
         if (bodyIndex < 0 || bodyIndex >= bodyLength()) {
             return false;
         }
         long column = bodyIndex % rowStride;
-        return column < pixelBytesPerRow() && column % 3 != 2;
+        return column >= pixelBytesPerRow() || column % 3 != 2;
     }
 
-    public long dataComponentCountAfterPrefix(int prefixBytes) {
+    public long dataByteCountAfterPrefix(int prefixBytes) {
         if (prefixBytes < 0) {
             throw new IllegalArgumentException("Prefijo negativo: " + prefixBytes);
         }
-        long count = Math.multiplyExact(Math.multiplyExact((long) width, rows), 2L);
+        long count = Math.multiplyExact(rowStride - width, rows);
         long prefixEnd = Math.min((long) prefixBytes, bodyLength());
         for (long index = 0; index < prefixEnd; index++) {
-            if (isBlueOrGreenComponent(index)) {
+            if (isLsbiDataByte(index)) {
                 count--;
             }
         }
@@ -52,6 +52,6 @@ public record CarrierLayout(int width, long rows, long rowStride) {
     }
 
     public long capacityBytesAfterPrefix(int prefixBytes) {
-        return dataComponentCountAfterPrefix(prefixBytes) / Byte.SIZE;
+        return dataByteCountAfterPrefix(prefixBytes) / Byte.SIZE;
     }
 }

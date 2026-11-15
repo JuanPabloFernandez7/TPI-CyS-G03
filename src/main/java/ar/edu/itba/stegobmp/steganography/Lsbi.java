@@ -3,8 +3,8 @@ package ar.edu.itba.stegobmp.steganography;
 import java.util.Objects;
 
 /**
- * LSBI over B and G components in physical BGR order. The first four body bytes store
- * the per-pattern inversion flags and are not used for payload data.
+ * LSBI over B/G components and row padding in physical order. The first four body bytes
+ * store the per-pattern inversion flags and are not used for payload data.
  */
 public final class Lsbi implements Steganography {
     private static final int FLAG_BYTES = 4;
@@ -107,7 +107,7 @@ public final class Lsbi implements Steganography {
 
     private static int nextDataComponent(byte[] body, CarrierLayout layout, int start) {
         for (int index = start; index < body.length; index++) {
-            if (layout.isBlueOrGreenComponent(index)) {
+            if (layout.isLsbiDataByte(index)) {
                 return index;
             }
         }
