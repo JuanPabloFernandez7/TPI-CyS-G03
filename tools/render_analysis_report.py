@@ -1,4 +1,5 @@
-"""Render the Markdown report to a paginated PDF (requires reportlab and Arial fonts)."""
+"""Render a Markdown document to a paginated PDF using ReportLab."""
+import argparse
 import html
 import re
 import textwrap
@@ -8,22 +9,17 @@ from reportlab.lib import colors
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Preformatted, Image, KeepTogether
 
 
 ROOT = Path(__file__).resolve().parents[1]
-for name, filename in [('Arial', 'arial.ttf'), ('Arial-Bold', 'arialbd.ttf'), ('Arial-Italic', 'ariali.ttf')]:
-    pdfmetrics.registerFont(TTFont(name, str(Path('C:/Windows/Fonts') / filename)))
-pdfmetrics.registerFontFamily('Arial', normal='Arial', bold='Arial-Bold', italic='Arial-Italic', boldItalic='Arial-Bold')
 WIDTH = A4[0] - 88
 styles = {
-    'body': ParagraphStyle('body', fontName='Arial', fontSize=9.4, leading=14, spaceAfter=7),
-    'h1': ParagraphStyle('h1', fontName='Arial-Bold', fontSize=23, leading=29, textColor=colors.HexColor('#173c57'), spaceAfter=15),
-    'h2': ParagraphStyle('h2', fontName='Arial-Bold', fontSize=13, leading=18, textColor=colors.HexColor('#173c57'), spaceBefore=15, spaceAfter=9, keepWithNext=True),
-    'h3': ParagraphStyle('h3', fontName='Arial-Bold', fontSize=10.5, leading=15, spaceBefore=10, spaceAfter=6, keepWithNext=True),
-    'cell': ParagraphStyle('cell', fontName='Arial', fontSize=8.0, leading=11, splitLongWords=True),
+    'body': ParagraphStyle('body', fontName='Helvetica', fontSize=9.4, leading=14, spaceAfter=7),
+    'h1': ParagraphStyle('h1', fontName='Helvetica-Bold', fontSize=23, leading=29, textColor=colors.HexColor('#173c57'), spaceAfter=15),
+    'h2': ParagraphStyle('h2', fontName='Helvetica-Bold', fontSize=13, leading=18, textColor=colors.HexColor('#173c57'), spaceBefore=15, spaceAfter=9, keepWithNext=True),
+    'h3': ParagraphStyle('h3', fontName='Helvetica-Bold', fontSize=10.5, leading=15, spaceBefore=10, spaceAfter=6, keepWithNext=True),
+    'cell': ParagraphStyle('cell', fontName='Helvetica', fontSize=8.0, leading=11, splitLongWords=True),
     'code': ParagraphStyle('code', fontName='Courier', fontSize=6.8, leading=9, backColor=colors.HexColor('#f2f5f7'), borderPadding=8, spaceBefore=6, spaceAfter=12),
 }
 
@@ -36,8 +32,8 @@ def inline(text):
     return re.sub(r'\*([^*]+)\*', r'<i>\1</i>', text)
 
 
-def render():
-    lines = (ROOT / 'docs/ESTEGOANALISIS_G03.md').read_text(encoding='utf-8').splitlines()
+def render(source, target):
+    lines = source.read_text(encoding='utf-8').splitlines()
     flow = []
     i = 0
     while i < len(lines):
@@ -101,19 +97,22 @@ def render():
         canvas.saveState()
         canvas.setStrokeColor(colors.HexColor('#c8d6df'))
         canvas.line(44, 38, A4[0] - 44, 38)
-        canvas.setFont('Arial', 8)
+        canvas.setFont('Helvetica', 8)
         canvas.setFillColor(colors.HexColor('#526572'))
-        canvas.drawString(44, 25, 'Criptografía y Seguridad | Grupo 3 | 15/11/2026')
+        canvas.drawString(44, 25, 'Criptografía y Seguridad | Grupo 3')
         canvas.drawRightString(A4[0] - 44, 25, str(doc.page))
         canvas.restoreState()
 
-    target = ROOT / 'output/pdf/Informe-Estegoanalisis-G03.pdf'
     target.parent.mkdir(parents=True, exist_ok=True)
     doc = SimpleDocTemplate(str(target), pagesize=A4, rightMargin=44, leftMargin=44, topMargin=40, bottomMargin=52,
-                            title='Esteganografía y estegoanálisis - Grupo 3', author='Grupo 3')
+                            title=source.stem, author='Grupo 3')
     doc.build(flow, onFirstPage=footer, onLaterPages=footer)
     print(target)
 
 
 if __name__ == '__main__':
-    render()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--input', type=Path, default=ROOT / 'docs/ARQUITECTURA.md')
+    parser.add_argument('--output', type=Path, default=ROOT / 'output/pdf/Arquitectura.pdf')
+    args = parser.parse_args()
+    render(args.input, args.output)
