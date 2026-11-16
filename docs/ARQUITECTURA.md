@@ -180,7 +180,9 @@ Las pruebas incluyen vectores manuales, casos inválidos, round-trips,
 compatibilidad criptográfica con OpenSSL y los seis PNG oficiales. Las
 muestras oficiales disponibles no tienen padding, por lo que la variante
 LSBI con padding está validada con pruebas propias, no con un vector externo.
-La validación en Pampero y el informe completo del punto 7 siguen pendientes.
+En Pampero, `mvn clean verify` pasó con 494 pruebas unitarias y 116 de
+integración, sin fallos ni omisiones, tanto con Java 21.0.13 como con
+Java 27. Se compiló con `--release 21` y se usó OpenSSL 3.6.5.
 
 ## Herramientas auxiliares
 
@@ -324,19 +326,6 @@ FFmpeg. Dura aproximadamente 53,64 s, video WMV3 de 320 × 240 y audio WMAv2.
 FFmpeg emitió una advertencia de timestamps no monótonos al escribir la
 salida de prueba, sin fallar la decodificación.
 
-Con soporte V5, la aplicación extrae el video directamente del original:
-
-```sh
-java -jar target/stegobmp-1.0.0-SNAPSHOT.jar \
-  -extract -p docs/docs_catedra/grupo3/frozen.bmp \
-  -out demo/grupo3-analisis/frozen-original \
-  -steg LSB1 -a aes128 -m cbc -pass exitoso
-```
-
-La extracción directa se comparó con la independiente y coincide byte por
-byte; ambas tienen el SHA-256 indicado más abajo. El archivo original no se
-modificó.
-
 **Adaptación usada antes de agregar V5:** se hizo una copia y se cambió
 únicamente el byte en offset 14, de `0x7c` a `0x28`: así el tamaño DIB pasa
 de 124 a 40. Se conservaron el offset 138 y todos los bytes de píxeles; los
@@ -368,26 +357,6 @@ Visualmente el fragmento muestra un mensaje codificado en el tejido de un
 telar. La identificación exacta de la película y del mensaje requiere una
 revisión del fragmento completo para el punto 7 del informe.
 
-## Comparación experimental de los tres métodos
-
-Se ocultó el mismo PNG de 42.095 bytes en `lado.bmp`, sin cifrado. Los tres
-resultados permitieron recuperar exactamente el archivo original. La
-capacidad indicada es la del flujo, no la del archivo neto; el flujo usado
-ocupó 42.104 bytes. El portador no tiene padding.
-
-| Método | Capacidad del flujo | Componentes modificados | MSE | PSNR |
-|---|---:|---:|---:|---:|
-| LSB1 | 115.200 bytes | 167.289 | 0,181520 | 55,542 dB |
-| LSB4 | 460.800 bytes | 78.451 | 5,911781 | 40,414 dB |
-| LSBI | 76.799 bytes | 166.710 | 0,180892 | 55,557 dB |
-
-En este caso LSB4 modificó menos componentes, pero cada componente pudo
-cambiar hasta 15 unidades, frente a una unidad en LSB1 y LSBI; por eso
-tiene mayor error cuadrático. Sobre las mismas posiciones B/G de LSBI, LSB
-sin inversión habría modificado 166.730 componentes de datos y LSBI modificó
-166.707, más tres flags. Esto ilustra el criterio de inversión para este
-caso; no garantiza que LSBI sea mejor en toda imagen o métrica.
-
 ## Integridad de los originales
 
 Los siguientes SHA-256 coincidieron antes y después del análisis:
@@ -403,7 +372,5 @@ af290697ee3bfa74b3b6b6ff85d29b08e109f9700ef44474a0c2c3e5fc55f227  frozen.bmp
 
 - Explicar el análisis externo y distinguir la adaptación anterior de la
   extracción directa ahora posible con el lector V5.
-- Integrar estos resultados y la comparación en el informe completo del punto
-  7; falta en particular estudiar el video con más detalle.
-- Validar compilación y ejecución en Pampero y revisar la documentación de
-  uso y los demás requisitos de entrega.
+- Revisar el informe final, incluido el detalle del video y la comparación
+  experimental de los algoritmos, junto con los demás requisitos de entrega.

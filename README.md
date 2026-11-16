@@ -23,7 +23,13 @@ openssl version
 
 Maven puede necesitar acceso a sus dependencias y plugins la primera vez.
 El programa Java no requiere bibliotecas externas en tiempo de ejecución.
-Todavía debe comprobarse en Pampero, entorno exigido por la consigna.
+
+Se verificó en Pampero con Java 21.0.13 y Java 27, usando OpenSSL 3.6.5
+y compilando con `--release 21`. En ambos runtimes, `mvn clean verify`
+pasó con 494 pruebas unitarias y 116 de integración, sin fallos ni
+omisiones. Con Java 27 también se verificaron round-trips cifrados con los
+tres métodos y las extracciones de Roma, Hugo y Frozen; Titanic se
+inspeccionó externamente.
 
 ## 2. Compilar y verificar
 
